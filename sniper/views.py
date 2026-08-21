@@ -52,11 +52,12 @@ def fetch_latest_tweet(username: str):
         res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
-            return data.get("tweet") or data.get("data")
+            # Handle nested payload variations from TwitterAPI.io
+            tweet_obj = data.get("tweet") or data.get("data") or data
+            return tweet_obj
     except Exception as e:
         print(f"Fetch error for @{username}: {e}")
     return None
-
 def generate_ai_banter(tweet_text: str) -> str:
     prompt = (
         "You are a funny, cynical Football Twitter meme account. Write a short, "
@@ -113,8 +114,13 @@ def trigger_snipe_view(request):
     for username in TARGET_ACCOUNTS:
         tweet = fetch_latest_tweet(username)
         if tweet:
-            tweet_id = str(tweet.get("id"))
-            tweet_text = tweet.get("text", "")
+            tweet_id = str(
+                        tweet.get("id_str") or 
+                        tweet.get("id") or 
+                        tweet.get("tweet_id") or 
+                        ""
+                    )
+            tweet_text = tweet.get("text") or tweet.get("full_text") or ""
             
             if not is_tweet_processed(tweet_id):
                 ai_reply = generate_ai_banter(tweet_text)
