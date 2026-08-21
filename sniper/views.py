@@ -63,12 +63,14 @@ def mark_tweet_processed(tweet_id: str):
         print(f"Supabase write error: {e}")
 
 def fetch_latest_tweet(username: str):
-    """Fetch latest tweet and expose API response problems for debugging."""
+    """Fetches latest tweet from TwitterAPI.io."""
     url = "https://api.twitterapi.io/twitter/user/last_tweets"
+
     headers = {
         "X-API-Key": TWITTER_API_KEY,
         "Accept": "application/json",
     }
+
     params = {
         "userName": username,
     }
@@ -86,31 +88,32 @@ def fetch_latest_tweet(username: str):
 
         res.raise_for_status()
 
-        data = res.json()
+        response_data = res.json()
 
-        tweets = data.get("tweets", [])
+        tweets = response_data.get("data", {}).get("tweets", [])
 
-        if not isinstance(tweets, list):
-            print(f"Unexpected tweets format: {type(tweets)}")
-            return None
-
-        if not tweets:
+        if not isinstance(tweets, list) or not tweets:
             print(f"No tweets returned for @{username}")
             return None
 
+        latest = tweets[0]
+
         print(
             f"Found {len(tweets)} tweets for @{username}. "
-            f"Latest ID: {tweets[0].get('id')}"
+            f"Latest ID: {latest.get('id')}"
         )
 
-        return tweets[0]
+        return latest
 
     except requests.exceptions.HTTPError as e:
         print(f"Twitter API HTTP error for @{username}: {e}")
+
     except requests.exceptions.RequestException as e:
         print(f"Twitter API request error for @{username}: {e}")
+
     except ValueError as e:
         print(f"Twitter API JSON error for @{username}: {e}")
+
     except Exception as e:
         print(f"Unexpected fetch error for @{username}: {e}")
 
