@@ -63,20 +63,58 @@ def mark_tweet_processed(tweet_id: str):
         print(f"Supabase write error: {e}")
 
 def fetch_latest_tweet(username: str):
-    """Fetches latest tweet from TwitterAPI.io using last_tweets endpoint."""
-    url = f"https://api.twitterapi.io/twitter/user/last_tweets?userName={username}"
-    headers = {"X-API-Key": TWITTER_API_KEY}
-    try:
-        res = requests.get(url, headers=headers, timeout=10)
-        if res.status_code == 200:
-            data = res.json()
-            tweets = data.get("tweets", [])
-            if isinstance(tweets, list) and len(tweets) > 0:
-                return tweets[0]
-    except Exception as e:
-        print(f"Fetch error for @{username}: {e}")
-    return None
+    """Fetch latest tweet and expose API response problems for debugging."""
+    url = "https://api.twitterapi.io/twitter/user/last_tweets"
+    headers = {
+        "X-API-Key": TWITTER_API_KEY,
+        "Accept": "application/json",
+    }
+    params = {
+        "userName": username,
+    }
 
+    try:
+        res = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=10,
+        )
+
+        print(f"Twitter API @{username}: HTTP {res.status_code}")
+        print(f"Twitter API response: {res.text[:2000]}")
+
+        res.raise_for_status()
+
+        data = res.json()
+
+        tweets = data.get("tweets", [])
+
+        if not isinstance(tweets, list):
+            print(f"Unexpected tweets format: {type(tweets)}")
+            return None
+
+        if not tweets:
+            print(f"No tweets returned for @{username}")
+            return None
+
+        print(
+            f"Found {len(tweets)} tweets for @{username}. "
+            f"Latest ID: {tweets[0].get('id')}"
+        )
+
+        return tweets[0]
+
+    except requests.exceptions.HTTPError as e:
+        print(f"Twitter API HTTP error for @{username}: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Twitter API request error for @{username}: {e}")
+    except ValueError as e:
+        print(f"Twitter API JSON error for @{username}: {e}")
+    except Exception as e:
+        print(f"Unexpected fetch error for @{username}: {e}")
+
+    return None
 def generate_ai_banter(tweet_text: str) -> str:
     """Generates football Twitter banter using Gemini 3.6 Flash."""
     prompt = (
