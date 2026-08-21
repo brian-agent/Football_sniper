@@ -119,49 +119,140 @@ def fetch_latest_tweet(username: str):
 
     return None
 def generate_ai_banter(tweet_text: str) -> str:
-    """Generates football Twitter banter using Gemini 3.6 Flash."""
+    """Generates and logs the AI football banter."""
+    print("=" * 60)
+    print("🤖 GEMINI BANter GENERATION STARTED")
+    print(f"📝 Original tweet: {tweet_text}")
+
     prompt = (
-        "You are a funny, cynical Football Twitter meme account. Write a short, "
-        "viral-worthy reply (under 120 characters) to this tweet. "
-        "Use modern football slang (cooked, finished, ghost, 😭, 💀) organically. "
-        f"Do not sound like an AI. Tweet text: '{tweet_text}'"
+        "You are a funny, cynical Football Twitter meme account. "
+        "Write a short, viral-worthy reply under 120 characters. "
+        "Use modern football slang (cooked, finished, ghost, 😭, 💀) "
+        "organically. Do not sound like an AI. "
+        f"Tweet text: '{tweet_text}'"
     )
+
+    print(f"📨 Gemini prompt created")
+    print(f"📏 Prompt length: {len(prompt)} characters")
+
     try:
-        
+        print("⏳ Calling Gemini...")
+
         response = gemini_client.models.generate_content(
-            model='gemini-3.6-flash',
+            model="gemini-3.6-flash",
             contents=prompt,
         )
-        return response.text.strip().replace('"', '')
+
+        print("✅ Gemini API responded")
+        print(f"📦 Response object: {response}")
+
+        if not response.text:
+            print("❌ Gemini returned empty text")
+            return None
+
+        ai_reply = response.text.strip().replace('"', '')
+
+        print(f"🔥 GENERATED BANTER: {ai_reply}")
+        print(f"📏 Reply length: {len(ai_reply)} characters")
+        print("🤖 GEMINI GENERATION COMPLETE")
+        print("=" * 60)
+
+        return ai_reply
+
     except Exception as e:
-        print(f"Gemini error: {e}")
-        return "Todd Boehly is running a daycare center not a football club 😭💀"
-def send_telegram_approval(username: str, original_tweet: str, ai_reply: str, tweet_id: str):
-    """Sends notification with pre-filled X intent reply URL to Telegram."""
+        print("❌ GEMINI ERROR")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error: {e}")
+        print("=" * 60)
+
+        return None
+def send_telegram_approval(
+    username: str,
+    original_tweet: str,
+    ai_reply: str,
+    tweet_id: str
+):
+    """Sends Telegram approval message and logs the complete result."""
+
+    print("=" * 60)
+    print("📱 TELEGRAM DELIVERY STARTED")
+    print(f"👤 Account: @{username}")
+    print(f"🐦 Tweet ID: {tweet_id}")
+    print(f"🤖 AI Reply: {ai_reply}")
+
     encoded_reply = urllib.parse.quote(ai_reply)
-    x_intent_url = f"https://twitter.com/intent/tweet?text={encoded_reply}&in_reply_to={tweet_id}"
-    
+
+    x_intent_url = (
+        f"https://twitter.com/intent/tweet"
+        f"?text={encoded_reply}"
+        f"&in_reply_to={tweet_id}"
+    )
+
     msg = (
         f"🚨 *NEW TWEET SNIPED*\n"
-        f"**From:** @{username}\n"
-        f"**Tweet:** _{original_tweet}_\n\n"
-        f"🤖 *AI Suggested Reply:* \n"
+        f"*From:* @{username}\n"
+        f"*Tweet:* _{original_tweet}_\n\n"
+        f"🤖 *AI Suggested Reply:*\n"
         f"`{ai_reply}`\n\n"
         f"👉 [APPROVE & REPLY ON X]({x_intent_url})"
     )
-    
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+    print("📝 Telegram message constructed")
+    print(f"📏 Message length: {len(msg)} characters")
+    print(f"🔗 X reply URL: {x_intent_url}")
+
+    url = (
+        f"https://api.telegram.org/"
+        f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    )
+
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": msg,
         "parse_mode": "Markdown",
-        "disable_web_page_preview": True
+        "disable_web_page_preview": True,
     }
-    try:
-        requests.post(url, json=payload, timeout=5)
-    except Exception as e:
-        print(f"Telegram alert error: {e}")
 
+    print(f"🎯 Telegram chat ID configured: {bool(TELEGRAM_CHAT_ID)}")
+    print(f"🔑 Telegram bot token configured: {bool(TELEGRAM_BOT_TOKEN)}")
+    print("⏳ Sending request to Telegram...")
+
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            timeout=10,
+        )
+
+        print(f"📡 Telegram HTTP status: {response.status_code}")
+        print(f"📦 Telegram raw response: {response.text}")
+
+        if response.status_code != 200:
+            print("❌ TELEGRAM HTTP ERROR")
+            return False
+
+        telegram_data = response.json()
+
+        if telegram_data.get("ok") is True:
+            print("✅ TELEGRAM MESSAGE DELIVERED")
+            print(f"📨 Telegram message ID: "
+                  f"{telegram_data.get('result', {}).get('message_id')}")
+            print("=" * 60)
+            return True
+
+        print("❌ TELEGRAM API REJECTED MESSAGE")
+        print(f"Telegram response: {telegram_data}")
+        print("=" * 60)
+
+        return False
+
+    except Exception as e:
+        print("❌ TELEGRAM REQUEST ERROR")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error: {e}")
+        print("=" * 60)
+
+        return False
 def trigger_snipe_view(request):
     """
     HTTP Trigger Endpoint: /api/trigger/
