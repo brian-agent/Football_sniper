@@ -253,11 +253,30 @@ def send_telegram_approval(
         print("=" * 60)
 
         return False
+def test_telegram_bot():
+    print("=" * 60)
+    print("🔎 TESTING TELEGRAM BOT TOKEN")
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getMe"
+
+    try:
+        response = requests.get(url, timeout=10)
+
+        print(f"HTTP status: {response.status_code}")
+        print(f"Response: {response.text}")
+
+        return response.status_code == 200
+
+    except Exception as e:
+        print(f"Telegram connection error: {e}")
+        return False
 def trigger_snipe_view(request):
+
     """
     HTTP Trigger Endpoint: /api/trigger/
     Params: key (required), force (optional boolean to bypass match hours)
     """
+    test_telegram_bot()
     key = request.GET.get("key")
     if key != CRON_SECRET:
         return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
