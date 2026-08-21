@@ -157,4 +157,4 @@ def trigger_snipe_view(request):
 
 def health_check(request):
     """Public health endpoint: /api/health/"""
-    return JsonResponse({"status": "healthy", "service": "Football Tweet Sniper API"})nn
+    return JsonResponse({"status": "healthy", "service": "Football Tweet Sniper API"})
