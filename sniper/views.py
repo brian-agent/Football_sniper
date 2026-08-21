@@ -17,9 +17,19 @@ CRON_SECRET = os.getenv("CRON_SECRET", "my-secret-passkey")
 gemini_client = genai.Client()
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 TARGET_ACCOUNTS = ["fabrizioromano", "TrollFootball"]
+
+def get_supabase_client():
+    """Safely initializes Supabase client without breaking startup imports."""
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_KEY")
+    if url and key:
+        try:
+            return create_client(url, key)
+        except Exception as e:
+            print(f"Supabase init error: {e}")
+    return None
 
 def is_active_window() -> bool:
     """Checks European football hours (11:00 AM - 11:00 PM UK Time)."""
@@ -71,6 +81,7 @@ def generate_ai_banter(tweet_text: str) -> str:
         f"Do not sound like an AI. Tweet text: '{tweet_text}'"
     )
     try:
+        
         response = gemini_client.models.generate_content(
             model='gemini-3.6-flash',
             contents=prompt,
