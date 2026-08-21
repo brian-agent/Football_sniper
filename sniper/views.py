@@ -63,7 +63,7 @@ def fetch_latest_tweet(username: str):
     return None
 
 def generate_ai_banter(tweet_text: str) -> str:
-    """Generates football Twitter banter using Gemini 2.5 Flash."""
+    """Generates football Twitter banter using Gemini 3.6 Flash."""
     prompt = (
         "You are a funny, cynical Football Twitter meme account. Write a short, "
         "viral-worthy reply (under 120 characters) to this tweet. "
@@ -72,14 +72,13 @@ def generate_ai_banter(tweet_text: str) -> str:
     )
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-3.6-flash',
             contents=prompt,
         )
         return response.text.strip().replace('"', '')
     except Exception as e:
         print(f"Gemini error: {e}")
         return "Todd Boehly is running a daycare center not a football club 😭💀"
-
 def send_telegram_approval(username: str, original_tweet: str, ai_reply: str, tweet_id: str):
     """Sends notification with pre-filled X intent reply URL to Telegram."""
     encoded_reply = urllib.parse.quote(ai_reply)
