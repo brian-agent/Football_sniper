@@ -1,0 +1,8 @@
+Django>=5.0
+gunicorn
+requests
+google-genai
+supabase
+pytz
+python-dotenv
+dj-database-url
