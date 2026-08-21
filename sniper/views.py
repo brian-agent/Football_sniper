@@ -24,12 +24,17 @@ def get_supabase_client():
     """Safely initializes Supabase client without breaking startup imports."""
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
+
     if url and key:
         try:
             return create_client(url, key)
         except Exception as e:
             print(f"Supabase init error: {e}")
+
     return None
+
+
+supabase = get_supabase_client()
 
 def is_active_window() -> bool:
     """Checks European football hours (11:00 AM - 11:00 PM UK Time)."""
